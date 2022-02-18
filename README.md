@@ -1,3 +1,20 @@
+* [Table of Contents](#table-of-contents)
+   * [Set Up](#set-up)
+      * [Install istio](#install-istio)
+      * [Verify istio installation](#verify-istio-installation)
+      * [Install Grafana](#install-grafana)
+      * [Install Prometheus](#install-prometheus)
+      * [Install Kiali](#install-kiali)
+   * [Authentication Policy Lab](#authentication-policy-lab)
+      * [Permissive mTLS as default](#permissive-mtls-as-default)
+      * [Enable STRICT mTLS mesh wide](#enable-strict-mtls-mesh-wide)
+      * [Enable mTLS per namespace](#enable-mtls-per-namespace)
+      * [Enable mTLS per workload](#enable-mtls-per-workload)
+      * [Clean up](#clean-up)
+   * [Mutual TLS Migration lab](#mutual-tls-migration-lab)
+      * [Lock down mTLS by namespace](#lock-down-mtls-by-namespace)
+      * [Lock down mTLS mesh wide](#lock-down-mtls-mesh-wide)
+      * [Clean up](#clean-up-1)
 ## Set Up
 
 ### Install istio
@@ -138,5 +155,54 @@ spec:
 EOF
 ```
 
+### Clean up
+```
+kubectl delete peerauthentication -n istio-system default
+```
+
 ## Mutual TLS Migration lab
 * https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+
+
+```
+# all reachable by default
+for from in "foo" "bar" "legacy"; do for to in "foo" "bar" "legacy"; do kubectl exec "$(kubectl get pod -l app=sleep -n ${from} -o jsonpath={.items..metadata.name})" -c sleep -n ${from} -- curl -s "http://httpbin.${to}:8000/ip" -s -o /dev/null -w "sleep.${from} to httpbin.${to}: %{http_code}\n"; done; done
+
+# verify no pa or dr
+kubectl get peerauthentication --all-namespaces
+kubectl get destinationrules.networking.istio.io --all-namespaces -o yaml | grep "host:"
+```
+
+### Lock down mTLS by namespace
+
+```
+kubectl apply -n foo -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "default"
+spec:
+  mtls:
+    mode: STRICT
+EOF
+```
+
+
+### Lock down mTLS mesh wide
+
+```
+kubectl apply -n istio-system -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "default"
+spec:
+  mtls:
+    mode: STRICT
+EOF
+```
+
+### Clean up
+```
+kubectl delete peerauthentication -n istio-system default
+```
