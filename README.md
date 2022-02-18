@@ -46,6 +46,12 @@ kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.13/samp
 kubectl -n istio-system get svc
 ```
 
+### Install Kiali
+```
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.13/samples/addons/kiali.yaml
+# open the dashboard
+istioctl dashboard kiali
+```
 
 ## Authentication Policy Lab
 * https://istio.io/latest/docs/tasks/security/authentication/authn-policy/
