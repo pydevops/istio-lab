@@ -206,3 +206,46 @@ EOF
 ```
 kubectl delete peerauthentication -n istio-system default
 ```
+
+
+## k8s ingress
+* https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/
+
+```
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1beta1
+kind: IngressClass
+metadata:
+  name: istio
+spec:
+  controller: istio.io/ingress-controller
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: istio
+  name: ingress
+  namespace: foo
+spec:
+  rules:
+  - host: httpbin.example.com
+    http:
+      paths:
+      - path: /status/*
+        backend:
+          serviceName: httpbin
+          servicePort: 8000
+EOF
+```
+
+
+```
+# verify the ingress using istio gateway
+export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
+export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
+export TCP_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="tcp")].port}')
+
+curl -s -I -HHost:httpbin.example.com "http://$INGRESS_HOST:$INGRESS_PORT/status/200"
+```
