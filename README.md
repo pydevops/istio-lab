@@ -208,7 +208,7 @@ kubectl delete peerauthentication -n istio-system default
 ```
 
 
-## k8s ingress
+## working with k8s ingress
 * https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/
 
 ```

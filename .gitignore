@@ -1,3 +1,4 @@
 .envrc
 kubeconfig
 istio-*
+ca.crt
