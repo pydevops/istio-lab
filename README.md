@@ -20,10 +20,13 @@
 ### Install istio
 ```
 curl -L https://istio.io/downloadIstio | sh -
-cd istio-1.13.0/
+cd istio-1.13.1/
 export PATH=$PWD/bin:$PATH
 istioctl install --set profile=demo -y
 kubectl -n istio-system get deploy
+# annotate as internal LB
+kubectl annotate svc istio-ingressgateway 
+
 ```
 
 ### Verify istio installation
@@ -47,6 +50,17 @@ Istio configuration profiles:
     remote
 
 $ istioctl profile dump demo
+```
+
+### Install bookinfo demo
+
+* https://istio.io/latest/docs/examples/bookinfo/
+
+```
+# testing the service is up and running
+$ kubectl port-forward svc/istio-ingressgateway  8080:80
+$ curl -s http://localhost:8080/productpage | grep -o "<title>.*</title>"
+<title>Simple Bookstore App</title>
 ```
 
 ### Install Grafana
@@ -246,6 +260,14 @@ export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -
 export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
 export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
 export TCP_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="tcp")].port}')
+$ curl -s -I -HHost:httpbin.example.com "http://$INGRESS_HOST:$INGRESS_PORT/status/200"
+HTTP/1.1 200 OK
+server: istio-envoy
+date: Fri, 25 Feb 2022 01:44:53 GMT
+content-type: text/html; charset=utf-8
+access-control-allow-origin: *
+access-control-allow-credentials: true
+content-length: 0
+x-envoy-upstream-service-time: 12
 
-curl -s -I -HHost:httpbin.example.com "http://$INGRESS_HOST:$INGRESS_PORT/status/200"
 ```
